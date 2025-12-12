@@ -1,0 +1,5 @@
+SQLAlchemy~=2.0.45
+pydantic~=2.12.5
+fastapi~=0.124.0
+openai~=2.9.0
+python-dotenv~=1.2.1
