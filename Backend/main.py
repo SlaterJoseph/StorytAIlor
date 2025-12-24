@@ -19,8 +19,6 @@ async def lifespan(app: FastAPI):
     yield
     logger.info(f"Shutting Down")
 
-
-logger = logging.getLogger("uvicorn")
 app = FastAPI(title="StorytAIlor API", lifespan=lifespan)
 debug = True
 
