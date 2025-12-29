@@ -1,11 +1,13 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends
 from contextlib import contextmanager, asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
 import logging
+from sqlalchemy.orm import Session
 
 from services.openai_service import generate_chapter, connect_to_openai
 from models.StoryResponse import StoryResponse
 from models.Message import Message
+from db.database import create_db_and_tables, get_db
 
 logger = logging.getLogger("uvicorn")
 client = None
@@ -15,6 +17,9 @@ async def lifespan(app: FastAPI):
     global client
     client = connect_to_openai()
     logger.info(f"Connecting to OpenAI service")
+
+    create_db_and_tables()
+    logger.info(f"Database Connected")
 
     yield
     logger.info(f"Shutting Down")

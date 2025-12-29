@@ -14,3 +14,4 @@ class Story(Base):
     user = relationship("User", back_populates="stories")
     created_at = Column(DateTime, default=datetime.now)
     updated_at = Column(DateTime, default=datetime.now)
+    chapters = relationship("Chapter", back_populates="story")
