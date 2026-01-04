@@ -1,102 +1,112 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from 'react';
+import { Login } from './components/Login';
+import { Register } from './components/Register';
+import { Chat } from './components/Chat';
+import { api } from './services/api';
+import type { User, LoginData, RegisterData } from './types';
 
-type BackendResponse = {
-    responses: string[]; // either length 1 or 2
-};
+type View = 'login' | 'register' | 'chat';
 
 const App: React.FC = () => {
-    const [inputMessage, setInputMessage] = useState("");
-    const [serverResponses, setServerResponses] = useState<string[]>([]);
-    const [selectedResponse, setSelectedResponse] = useState<string | null>(null);
+    const [view, setView] = useState<View>('login');
+    const [user, setUser] = useState<User | null>(null);
+    const [token, setToken] = useState<string | null>(null);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
 
-    // send user message to backend
-    const sendMessage = async () => {
+    // Check for saved token on mount
+    useEffect(() => {
+        const savedToken = localStorage.getItem('token');
+        const savedUser = localStorage.getItem('user');
+        if (savedToken && savedUser) {
+            setToken(savedToken);
+            setUser(JSON.parse(savedUser));
+            setView('chat');
+        }
+    }, []);
+
+    const handleLogin = async (data: LoginData) => {
         try {
-            const response = await fetch("http://localhost:8000/api/message", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ message: inputMessage }),
-            });
-
-            if (!response.ok) {
-                console.error("Error:", response.statusText);
-                return;
-            }
-
-            const data: BackendResponse = await response.json();
-            setServerResponses(data.responses);
-            setSelectedResponse(null); // reset choice
+            setLoading(true);
+            setError('');
+            const response = await api.login(data);
+            setToken(response.access_token);
+            setUser(response.user);
+            localStorage.setItem('token', response.access_token);
+            localStorage.setItem('user', JSON.stringify(response.user));
+            setView('chat');
         } catch (err) {
-            console.error("Error sending message:", err);
+            setError(err instanceof Error ? err.message : 'Login failed');
+        } finally {
+            setLoading(false);
         }
     };
 
-    // request PDF from backend
-    const requestPDF = async () => {
+    const handleRegister = async (data: RegisterData) => {
         try {
-            const response = await fetch("http://localhost:8000/api/pdf", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ conversation: serverResponses }),
-            });
-
-            if (!response.ok) {
-                console.error("PDF request failed:", response.statusText);
-                return;
-            }
-
-            const blob = await response.blob();
-            const url = URL.createObjectURL(blob);
-            window.open(url, "_blank");
+            setLoading(true);
+            setError('');
+            const response = await api.register(data);
+            setToken(response.access_token);
+            setUser(response.user);
+            localStorage.setItem('token', response.access_token);
+            localStorage.setItem('user', JSON.stringify(response.user));
+            setView('chat');
         } catch (err) {
-            console.error("Error fetching PDF:", err);
+            setError(err instanceof Error ? err.message : 'Registration failed');
+        } finally {
+            setLoading(false);
         }
     };
+
+    const handleLogout = () => {
+        setToken(null);
+        setUser(null);
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        setView('login');
+    };
+
+    if (loading) {
+        return <div style={{ padding: '2rem', textAlign: 'center' }}>Loading...</div>;
+    }
 
     return (
-        <div style={{ padding: "2rem", fontFamily: "sans-serif" }}>
-            <h1>Chat with Backend</h1>
+        <div>
+            {error && (
+                <div style={{
+                    padding: '1rem',
+                    backgroundColor: '#ff6b6b',
+                    color: 'white',
+                    textAlign: 'center'
+                }}>
+                    {error}
+                </div>
+            )}
 
-            <div>
-                <input
-                    type="text"
-                    value={inputMessage}
-                    onChange={(e) => setInputMessage(e.target.value)}
-                    placeholder="Write a message"
-                    style={{ width: "60%", marginRight: "1rem" }}
+            {view === 'login' && (
+                <Login
+                    onLogin={handleLogin}
+                    onSwitchToRegister={() => {
+                        setError('');
+                        setView('register');
+                    }}
                 />
-                <button onClick={sendMessage}>Send</button>
-            </div>
-
-            {serverResponses.length > 0 && (
-                <div style={{ marginTop: "1rem" }}>
-                    <h2>Responses</h2>
-                    {serverResponses.map((resp, index) => (
-                        <button
-                            key={index}
-                            onClick={() => setSelectedResponse(resp)}
-                            style={{
-                                display: "block",
-                                margin: "0.5rem 0",
-                                background:
-                                    selectedResponse === resp ? "#AAF" : "lightgray",
-                            }}
-                        >
-                            {resp}
-                        </button>
-                    ))}
-                </div>
             )}
 
-            {selectedResponse && (
-                <div style={{ marginTop: "1rem" }}>
-                    <p>Selected: {selectedResponse}</p>
-                </div>
+            {view === 'register' && (
+                <Register
+                    onRegister={handleRegister}
+                    onSwitchToLogin={() => {
+                        setError('');
+                        setView('login');
+                    }}
+                />
             )}
 
-            <button style={{ marginTop: "2rem" }} onClick={requestPDF}>
-                📄 Get PDF
-            </button>
+            {view === 'chat' && user && token && (
+                <Chat user={user} token={token} onLogout={handleLogout} />
+            )}
         </div>
     );
 };
