@@ -1,13 +1,12 @@
-from fastapi import FastAPI, HTTPException, Depends
-from contextlib import contextmanager, asynccontextmanager
+from fastapi import FastAPI, HTTPException
+from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
 import logging
-from sqlalchemy.orm import Session
 
 from services.openai_service import generate_chapter, connect_to_openai
-from models.StoryResponse import StoryResponse
-from models.Message import Message
-from db.database import create_db_and_tables, get_db
+from schema.StoryResponse import StoryResponse
+from schema.Message import Message
+from db.database import create_db_and_tables
 
 logger = logging.getLogger("uvicorn")
 client = None

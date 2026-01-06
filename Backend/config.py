@@ -10,6 +10,7 @@ class Settings:
     INSTRUCTIONS = os.getenv("INSTRUCTIONS")
     DATABASE_URL = os.getenv("DATABASE_URL")
     JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY")
+    JWT_ACCESS_TOKEN_MINUTES = os.getenv("JWT_ACCESS_TOKEN_MINUTES")
 
     if not OPENAI_API_KEY:
         raise Exception("OPENAI_API_KEY is not set")
@@ -22,5 +23,8 @@ class Settings:
 
     if not JWT_SECRET_KEY:
         raise Exception("JWT_SECRET_KEY is not set")
+
+    if not JWT_ACCESS_TOKEN_MINUTES:
+        raise Exception("JWT_ACCESS_TOKEN_MINUTES is not set")
 
 settings = Settings()
